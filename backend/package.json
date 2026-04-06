@@ -1,0 +1,32 @@
+{
+  "name": "zamota-backend",
+  "version": "1.0.0",
+  "description": "Zamota Food Delivery — Backend API with Express, Socket.io, MongoDB & Redis",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "dev": "nodemon ./src/server.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "food-delivery",
+    "express",
+    "socket.io",
+    "mongodb"
+  ],
+  "author": "Zamota",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.10.1",
+    "socket.io": "^4.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

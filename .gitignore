@@ -1,0 +1,22 @@
+# Zamota — Food Delivery Platform
+
+## Dependencies
+node_modules/
+dist/
+.env
+*.env.local
+
+## Logs
+*.log
+npm-debug.log*
+
+## OS
+.DS_Store
+Thumbs.db
+
+## IDE
+.vscode/
+.idea/
+
+## Docker
+*.tar

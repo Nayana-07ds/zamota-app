@@ -1,0 +1,97 @@
+# ─── Backend Deployment ───────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zamota-backend
+  labels:
+    app: zamota-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zamota-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: zamota-backend
+    spec:
+      containers:
+        - name: backend
+          image: zamota-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "5000"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: zamota-secrets
+                  key: MONGO_URI
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: zamota-secrets
+                  key: REDIS_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: zamota-secrets
+                  key: JWT_SECRET
+            - name: CLIENT_URL
+              value: "https://zamota.yourdomain.com"
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+# ─── Backend Service ──────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: zamota-backend-svc
+spec:
+  selector:
+    app: zamota-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP
+---
+# ─── Secrets (apply separately with real values) ──────────────────────────────
+# kubectl create secret generic zamota-secrets \
+#   --from-literal=MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/zamota \
+#   --from-literal=REDIS_URL=redis://redis-svc:6379 \
+#   --from-literal=JWT_SECRET=your_super_secret_key
+apiVersion: v1
+kind: Secret
+metadata:
+  name: zamota-secrets
+type: Opaque
+stringData:
+  MONGO_URI: "mongodb://zamota-mongodb-svc:27017/zamota"
+  REDIS_URL: "redis://zamota-redis-svc:6379"
+  JWT_SECRET: "CHANGE_THIS_IN_PRODUCTION"

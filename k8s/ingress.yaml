@@ -1,0 +1,46 @@
+# ─── Nginx Ingress ────────────────────────────────────────────────────────────
+# Prerequisites: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zamota-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Uncomment for TLS with cert-manager:
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - zamota.yourdomain.com
+  #     secretName: zamota-tls
+  rules:
+    - host: zamota.yourdomain.com
+      http:
+        paths:
+          # API traffic → backend
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: zamota-backend-svc
+                port:
+                  number: 5000
+          # Socket.io traffic → backend
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: zamota-backend-svc
+                port:
+                  number: 5000
+          # Everything else → frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: zamota-frontend-svc
+                port:
+                  number: 80

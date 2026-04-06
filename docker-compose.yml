@@ -1,0 +1,81 @@
+version: '3.9'
+
+services:
+  # ─── Frontend ──────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - zamota-net
+    restart: unless-stopped
+
+  # ─── Backend ───────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/zamota
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-zamota_super_secret_change_in_prod}
+      - JWT_EXPIRES=7d
+      - CLIENT_URL=http://localhost:3000
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - zamota-net
+    restart: unless-stopped
+
+  # ─── MongoDB ───────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - zamota-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - zamota-net
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+# ─── Dev Override (no build) ──────────────────────────────────────────────────
+# For local development, use: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  zamota-net:
+    driver: bridge

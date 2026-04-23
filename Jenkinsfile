@@ -1,20 +1,17 @@
 pipeline {
     agent any
-
     environment {
-        // Change these to your Docker Hub username if you want to push
         DOCKER_IMAGE_BACKEND  = "zamota-backend"
         DOCKER_IMAGE_FRONTEND = "zamota-frontend"
         APP_PORT_FRONTEND     = "3000"
         APP_PORT_BACKEND      = "5000"
+        K8S_DIR               = "k8s"
     }
-
     stages {
-
         stage('Clone Repository') {
             steps {
-                echo '>>> Cloning code from GitHub...'
-                // Jenkins will auto-checkout from the GitHub repo you configure in the job
+                echo '>>> Cloning repository from GitHub...'
+                echo 'https://github.com/Nayana-07ds/zamota-app.git'
                 checkout scm
             }
         }
@@ -39,7 +36,7 @@ pipeline {
 
         stage('Verify Docker Images') {
             steps {
-                echo '>>> Verifying images were created...'
+                echo '>>> Verifying Docker images were created...'
                 sh 'docker images | grep -E "zamota|REPOSITORY"'
             }
         }
@@ -51,11 +48,11 @@ pipeline {
             }
         }
 
-        stage('Run Application') {
+        stage('Run Application with Docker') {
             steps {
                 echo '>>> Starting app with docker-compose...'
                 sh 'docker-compose up -d'
-                echo '>>> App is running!'
+                echo '>>> App is running via Docker!'
                 echo '>>> Frontend: http://localhost:3000'
                 echo '>>> Backend:  http://localhost:5000/api/health'
             }
@@ -69,19 +66,42 @@ pipeline {
             }
         }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo '>>> Deploying application to Kubernetes (Minikube)...'
+                sh 'kubectl apply -f ${K8S_DIR}/'
+                echo '>>> Kubernetes deployment applied!'
+            }
+        }
+
+        stage('Verify Kubernetes Deployment') {
+            steps {
+                echo '>>> Waiting for pods to start...'
+                sleep(time: 15, unit: 'SECONDS')
+                echo '>>> Checking pods status...'
+                sh 'kubectl get pods'
+                echo '>>> Checking services...'
+                sh 'kubectl get services'
+                echo '>>> Checking deployments...'
+                sh 'kubectl get deployments'
+            }
+        }
     }
 
     post {
         success {
-            echo '========================================='
-            echo ' BUILD SUCCESSFUL! App is running.'
-            echo ' Open http://localhost:3000 in browser'
-            echo '========================================='
+            echo '============================================='
+            echo ' BUILD SUCCESSFUL!'
+            echo ' Git → Jenkins → Docker → Kubernetes ✅'
+            echo ' Docker  Frontend : http://localhost:3000'
+            echo ' Docker  Backend  : http://localhost:5000'
+            echo ' K8s App Access   : minikube service zamota-frontend-svc'
+            echo '============================================='
         }
         failure {
-            echo '========================================='
+            echo '============================================='
             echo ' BUILD FAILED. Check logs above.'
-            echo '========================================='
+            echo '============================================='
         }
     }
 }

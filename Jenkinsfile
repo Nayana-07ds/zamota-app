@@ -3,12 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/Nayana-07ds/zamota-app.git'
-            }
-        }
-
         stage('Build Backend') {
             steps {
                 dir('backend') {
@@ -34,7 +28,6 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                echo "Waiting for backend..."
                 sh '''
                 sleep 30
                 curl http://localhost:5000 || echo "Backend not ready"
@@ -44,7 +37,7 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo "Skipping Kubernetes for Jenkins"
+                echo "Skipping Kubernetes"
             }
         }
     }
